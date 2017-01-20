@@ -6,9 +6,6 @@
  * Time: 16:26
  */
 
-define('MAX_FILE_SIZE', 40000000);
-define('SPLITTED_FILES_PREFIX', 'temp_mbox_');
-
 if(isset($argv[1]) && !empty($argv[1]))
     $mbox_input_file = $argv[1];
 else die('No mbox entry file specified');
@@ -36,8 +33,6 @@ if ($handle) {
     $i= 0;
     $current_mail = "";
 
-    $current_mail_file_path = $mbox_output_folder . '/' . SPLITTED_FILES_PREFIX . $file_counter . ".mbox";
-
     while (!feof($handle)) {
         $buffer = fgets($handle);
         if(substr($buffer, 0, 5) == "From ") {
@@ -46,37 +41,10 @@ if ($handle) {
             if(!empty($current_mail)) {
                 // Reach of the file limit.
 
-                if(file_exists($current_mail_file_path)) {
-                    $file_size = filesize($current_mail_file_path);
-                } else $file_size = 0;
-
                 $mail_size = strlen($current_mail);
 
-                // Handle very big mails not in classic stream
-                if($mail_size > MAX_FILE_SIZE) {
-                    $big_mails_counter++;
-                    file_put_contents("$mbox_output_folder/big_mail_$big_mails_counter.mbox", $current_mail, FILE_APPEND);
-                }
-                // File too big with current mail
-                else if(($file_size + $mail_size) > MAX_FILE_SIZE) {
-                    // First mail too big
-                    if($mail_counter == 1)
-                        die("First mail too big to store\n");
-
-                    // Start new one
-                    else {
-                        echo "\t- Start new mail file\n";
-                        $file_counter++;
-                        $current_mail_file_path = sprintf("$mbox_output_folder/%s$file_counter.mbox", SPLITTED_FILES_PREFIX);
-                        file_put_contents($current_mail_file_path, $buffer, FILE_APPEND);
-                    }
-                }
-                // put in current file
-                else {
-                    echo "\t- Write in current mail file\n";
-                    file_put_contents($current_mail_file_path, $current_mail, FILE_APPEND);
-                    echo "\t- File size : $file_size bytes\n";
-                }
+                $big_mails_counter++;
+                file_put_contents("$mbox_output_folder/email_$big_mails_counter.eml", $current_mail, FILE_APPEND);
                 $current_mail = "";
             }
 
